@@ -39,6 +39,8 @@ EXTRA_DIST = lustre.dtd lustre2ldif.xsl top.ldif \
              lnet_routes.conf lnet.conf lgssc.conf 99-lustre-server.rules
 
 sysconf_DATA = lnet.conf
+sysconfig_DATA =
+sysconfigdir = $(sysconfdir)/sysconfig
 
 if UTILS
 noinst_DATA = top.ldif lustre2ldif.xsl
@@ -54,10 +56,11 @@ if ZFS_ENABLED
 sysconf_DATA += ldev.conf
 endif
 if RHEL
-sysconfigdir = $(sysconfdir)/sysconfig
-sysconfig_DATA = lustre
 if GSS_KEYRING
 sysconfig_DATA += lsvcgss
+endif
+if !HAVE_SYSTEMD
+sysconfig_DATA += lustre
 endif
 endif
 endif

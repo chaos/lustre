@@ -634,11 +634,13 @@ echo '%{_unitdir}/lnet.service' >>lustre.files
 %if "%{_vendor}" == "redhat"
 # The following scripts are Red Hat specific
 %if %{with servers}
-echo '%{_sysconfdir}/init.d/lustre' >>lustre.files
-echo '%{_sysconfdir}/sysconfig/lustre' >>lustre.files
 %if %{with gss_keyring}
 echo '%{_sysconfdir}/init.d/lsvcgss' >>lustre.files
 echo '%config(noreplace) %{_sysconfdir}/sysconfig/lsvcgss' >>lustre.files
+%endif
+%if %{without systemd}
+echo '%{_sysconfdir}/sysconfig/lustre' >>lustre.files
+echo '%{_sysconfdir}/init.d/lustre' >>lustre.files
 %endif
 %endif
 
