@@ -58,7 +58,7 @@ struct ptlrpc_request_pool *osc_rq_pool;
 static unsigned int osc_reqpool_mem_max = 5;
 module_param(osc_reqpool_mem_max, uint, 0444);
 
-static int osc_idle_timeout = 20;
+static int osc_idle_timeout = 0;
 module_param(osc_idle_timeout, uint, 0644);
 
 #define osc_grant_args osc_brw_async_args
