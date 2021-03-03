@@ -2,7 +2,7 @@
 
 # Declare rpmbuild --with/--without parameters
 %bcond_without servers
-%bcond_without ldiskfs
+%bcond_with ldiskfs
 %bcond_without zfs
 %bcond_without lustre_tests
 %bcond_without lustre_utils
