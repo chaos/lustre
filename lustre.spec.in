@@ -16,7 +16,7 @@
 %bcond_without static
 %bcond_with    systemd
 %bcond_with mofed
-%bcond_without mpi
+%bcond_with mpi
 %bcond_with kabi
 %bcond_without l_getsepol
 
