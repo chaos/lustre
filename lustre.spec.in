@@ -58,24 +58,14 @@
 
 %{!?version: %global version @VERSION@}
 # if you want a custom kernel version set it variable with $ver.$arch
-%{!?kver:    %global kver    @LINUXRELEASE@}
+
+%define klnk %{_usrsrc}/kernels/*/include/config
+%{!?kver: %global kver %((echo ""; %{__cat} %{klnk}/kernel.release 2>/dev/null) | tail -1)}
+%{!?kdir: %global kdir %{_usrsrc}/kernels/%{kver}}
+%{!?kobjdir: %global kobjdir %kdir}
+
 # cut epoch for kmodtool
 %define _kver %(echo %{kver} | sed -e 's/^[0-9]*://')
-# trust version from kdir - but it can lost 'epoch'
-%if %{defined kdir}
-	%define _take_kver 1
-%endif
-%if %{defined kobjdir}
-	%define _take_kobj 1
-%endif
-%{!?kdir:    %global kdir    /lib/modules/%{_kver}/source}
-%{!?kobjdir: %global kobjdir %(if [ "%{kdir}" = "/lib/modules/%{_kver}/source" ]; then echo "/lib/modules/%{_kver}/build"; else echo "%{kdir}"; fi)}
-
-%if %{defined _take_kver}
-# as an alternative to this implementation we could simply "make -C $kdir kernelversion"
-%global kver %(files="include/generated/utsrelease.h include/linux/utsrelease.h include/linux/version.h"; for f in $files; do if test -r %{kobjdir}/$f && grep UTS_RELEASE %{kobjdir}/$f >/dev/null; then sed -ne '/^#define UTS_RELEASE/s/.*"\\(.*\\)"$/\\1/p' %{kobjdir}/$f; break; fi; done)
-%define _kver %kver
-%endif
 
 # We set this because kernel_module_package has its own method of identifying
 # which kernel to build against, and it is unlikely that its decision will
