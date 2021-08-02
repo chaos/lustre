@@ -95,11 +95,17 @@
 # response from them
 #%%global _use_internal_dependency_generator 0
 
+
 %if 0%{?rhel} > 7 || 0%{?fedora} > 33
 ## SUSE uses another tool for provides:
 ## https://github.com/openSUSE/kernel-source/blob/master/patches.rpmify/Add-ksym-provides-tool.patch
 %global __find_provides   %{_sourcedir}/find-provides
 %endif
+
+# Always call the package "lustre" so the scripts that build TOSS do not need
+# to be adjusted when we switch between client-only and client-server builds
+%global lustre_name lustre
+
 
 # Set the package name prefix
 %if %{undefined lustre_name}
