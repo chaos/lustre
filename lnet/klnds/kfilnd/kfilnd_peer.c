@@ -47,8 +47,8 @@ static void kfilnd_peer_free(void *ptr, void *arg)
 {
 	struct kfilnd_peer *kp = ptr;
 
-	CDEBUG(D_NET, "%s(0x%llx) peer entry freed\n",
-	       libcfs_nid2str(kp->kp_nid), kp->kp_addr);
+	CDEBUG(D_NET, "%s(%p):0x%llx peer entry freed\n",
+	       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr);
 
 	kfi_av_remove(kp->kp_dev->kfd_av, &kp->kp_addr, 1, 0);
 
@@ -62,8 +62,8 @@ static void kfilnd_peer_free(void *ptr, void *arg)
 void kfilnd_peer_down(struct kfilnd_peer *kp)
 {
 	if (atomic_cmpxchg(&kp->kp_remove_peer, 0, 1) == 0) {
-		CDEBUG(D_NET, "%s(0x%llx) marked for removal from peer cache\n",
-		       libcfs_nid2str(kp->kp_nid), kp->kp_addr);
+		CDEBUG(D_NET, "%s(%p):0x%llx marked for removal from peer cache\n",
+		       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr);
 
 		lnet_notify(kp->kp_dev->kfd_ni, kp->kp_nid, false, false,
 			    kp->kp_last_alive);
@@ -84,8 +84,8 @@ void kfilnd_peer_put(struct kfilnd_peer *kp)
 				       peer_cache_params);
 		refcount_dec(&kp->kp_cnt);
 
-		CDEBUG(D_NET, "%s(0x%llx) removed from peer cache\n",
-		       libcfs_nid2str(kp->kp_nid), kp->kp_addr);
+		CDEBUG(D_NET, "%s(%p):0x%llx removed from peer cache\n",
+		       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr);
 	}
 
 	if (refcount_dec_and_test(&kp->kp_cnt))
@@ -195,8 +195,8 @@ again:
 
 	kfilnd_peer_alive(kp);
 
-	CDEBUG(D_NET, "%s(0x%llx) peer entry allocated\n",
-	       libcfs_nid2str(kp->kp_nid), kp->kp_addr);
+	CDEBUG(D_NET, "%s(%p):0x%llx peer entry allocated\n",
+	       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr);
 
 	return kp;
 
