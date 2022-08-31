@@ -16,6 +16,7 @@
 %bcond_without static
 %bcond_with    systemd
 %bcond_with mofed
+%bcond_with kfi
 %bcond_with mpi
 %bcond_with kabi
 %bcond_without l_getsepol
@@ -508,6 +509,14 @@ fi
 # mpi
 %endif
 
+%if %{with kfi}
+	kfi_path=$(ls /usr/src/kfabric-*/default/Module.symvers | sort --sort=version | xargs dirname)
+	if [ -z "$kfi_path" ]; then
+		echo "ERROR: could not find KFabrics devel headers"
+		exit 1
+	fi
+%endif
+
 %if %{with mofed}
 	o2ib_path=$(find /usr/src/ofa_kernel/ -type d -name ofed_scripts | xargs dirname)
 	if [ -z "$o2ib_path" ]; then
@@ -537,6 +546,7 @@ fi
 	%{!?with_systemd:--with-systemdsystemunitdir=no} \
 	%{?with_systemd:--with-systemdsystemunitdir=%{_unitdir}} \
 	%{?with_mofed:--with-o2ib=$o2ib_path} \
+	%{?with_kfi:--with-kfi=$kfi_path} \
 	%{!?with_l_getsepol:--disable-l_getsepol} \
 	--with-linux=%{kdir} \
 	--with-linux-obj=%{kobjdir} \
