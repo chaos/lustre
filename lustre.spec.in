@@ -16,7 +16,7 @@
 %bcond_without static
 %bcond_with    systemd
 %bcond_with mofed
-%bcond_with kfi
+%bcond_without kfi
 %bcond_with mpi
 %bcond_with kabi
 %bcond_without l_getsepol
@@ -196,6 +196,8 @@ Source6: kmp-lustre-osd-zfs.files
 Source7: kmp-lustre-tests.files
 Source8: find-provides
 Source9: find-provides.ksyms
+Source10: kmp-lustre-lnd-kfi.preamble
+Source11: kmp-lustre-lnd-kfi.files
 URL: https://wiki.whamcloud.com/
 BuildRoot: %{_tmppath}/lustre-%{version}-root
 %if %{with lustre_modules}
@@ -302,6 +304,10 @@ LDISKFS hooks for mount/mkfs into a dynamic library.
 # with lustre_utils
 %endif
 # with ldiskfs
+%endif
+
+%if %{with kfi}
+%kernel_module_package -n %{name}-lnd-kfi -p %SOURCE10 -f %SOURCE11 %{_flavor}
 %endif
 
 %if %{with zfs}
@@ -600,6 +606,10 @@ make install DESTDIR=$RPM_BUILD_ROOT
 # kernel_module_path macro.
 basemodpath=$RPM_BUILD_ROOT%{modules_fs_path}/%{name}
 %{__install} -D -m 0644 ${PWD}/Module.symvers %{buildroot}/Module.symvers
+%if %{with kfi}
+mkdir -p $basemodpath-lnd-kfi/net
+mv $basemodpath/net/kkfilnd.ko $basemodpath-lnd-kfi/net/kkfilnd.ko
+%endif
 %if %{with ldiskfs}
 mkdir -p $basemodpath-osd-ldiskfs/fs
 mv $basemodpath/fs/osd_ldiskfs.ko $basemodpath-osd-ldiskfs/fs/osd_ldiskfs.ko

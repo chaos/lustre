@@ -1,0 +1,5 @@
+Summary:        Lustre KFILND feature support
+Requires:	kmod-cray-kfabric
+Provides:       %{name}-lnd = %{version}
+Obsoletes:      %{name}-lnd-kfi < %{version}
+BuildRequires:	cray-kfabric-devel
