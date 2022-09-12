@@ -107,6 +107,11 @@
 # to be adjusted when we switch between client-only and client-server builds
 %global lustre_name lustre
 
+# KFILND only built for x86_64 due to build issues for cassini dependencies
+# on other arches
+%ifnarch x86_64
+    %undefine with_kfi
+%endif
 
 # Set the package name prefix
 %if %{undefined lustre_name}
