@@ -202,6 +202,7 @@ URL: https://wiki.whamcloud.com/
 BuildRoot: %{_tmppath}/lustre-%{version}-root
 %if %{with lustre_modules}
 Requires: %{requires_kmod_name} = %{requires_kmod_version}
+BuildRequires: bison flex
 %endif
 %if %{with lustre_tests_lutf}
 Requires: python3 >= 3.6.0
