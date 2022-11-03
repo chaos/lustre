@@ -165,7 +165,8 @@ command_t net_cmds[] = {
 	 "\t--cpt: CPU Partitions configured net uses (e.g. [0,1]\n"
 	 "\t--conns-per-peer: number of connections per peer\n"
 	 "\t--skip-mr-route-setup: do not add linux route for the ni\n"
-	 "\t--auth-key: Network authorization key (kfilnd only)\n"},
+	 "\t--auth-key: Network authorization key (kfilnd only)\n"
+	 "\t--traffic-class: Traffic class (kfilnd only)\n"},
 	{"del", jt_del_ni, 0, "delete a network\n"
 	 "\t--net: net name (e.g. tcp0)\n"
 	 "\t--if: physical interface (e.g. eth0)\n"},
@@ -1027,6 +1028,7 @@ static int jt_add_ni(int argc, char **argv)
 {
 	char *ip2net = NULL;
 	long int pto = -1, pc = -1, pbc = -1, cre = -1, cpp = -1, auth_key = -1;
+	char *traffic_class = NULL;
 	struct cYAML *err_rc = NULL;
 	int rc, opt, cpt_rc = -1;
 	struct lnet_dlc_network_descr nw_descr;
@@ -1038,7 +1040,7 @@ static int jt_add_ni(int argc, char **argv)
 	memset(&tunables, 0, sizeof(tunables));
 	lustre_lnet_init_nw_descr(&nw_descr);
 
-	const char *const short_options = "a:b:c:i:k:m:n:p:r:s:t:";
+	const char *const short_options = "a:b:c:i:k:m:n:p:r:s:t:T:";
 	static const struct option long_options[] = {
 	{ .name = "auth-key",	  .has_arg = required_argument, .val = 'a' },
 	{ .name = "peer-buffer-credits",
@@ -1054,6 +1056,7 @@ static int jt_add_ni(int argc, char **argv)
 	{ .name = "credits",	  .has_arg = required_argument, .val = 'r' },
 	{ .name = "cpt",	  .has_arg = required_argument, .val = 's' },
 	{ .name = "peer-timeout", .has_arg = required_argument, .val = 't' },
+	{ .name = "traffic-class", .has_arg = required_argument, .val = 'T' },
 	{ .name = NULL } };
 
 	rc = check_cmd(net_cmds, "net", "add", 0, argc, argv);
@@ -1135,6 +1138,9 @@ static int jt_add_ni(int argc, char **argv)
 				continue;
 			}
 			break;
+		case 'T':
+			traffic_class = optarg;
+			break;
 		case '?':
 			print_help(net_cmds, "net", "add");
 		default:
@@ -1144,6 +1150,13 @@ static int jt_add_ni(int argc, char **argv)
 
 	if (auth_key > 0 && LNET_NETTYP(nw_descr.nw_id) == KFILND) {
 		tunables.lt_tun.lnd_tun_u.lnd_kfi.lnd_auth_key = auth_key;
+		found = true;
+	}
+
+	if (traffic_class && LNET_NETTYP(nw_descr.nw_id) == KFILND &&
+	    strlen(traffic_class) < LNET_MAX_STR_LEN - 1) {
+		strcpy(&tunables.lt_tun.lnd_tun_u.lnd_kfi.lnd_traffic_class_str[0],
+		       traffic_class);
 		found = true;
 	}
 
