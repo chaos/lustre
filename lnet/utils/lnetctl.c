@@ -1140,6 +1140,14 @@ static int jt_add_ni(int argc, char **argv)
 			break;
 		case 'T':
 			traffic_class = optarg;
+			if (strlen(traffic_class) == 0 ||
+			    strlen(traffic_class) > LNET_MAX_STR_LEN - 1) {
+				cYAML_build_error(-1, -1, "ni", "add",
+						  "Invalid traffic-class argument",
+						  &err_rc);
+				rc = LUSTRE_CFG_RC_BAD_PARAM;
+				goto failed;
+			}
 			break;
 		case '?':
 			print_help(net_cmds, "net", "add");

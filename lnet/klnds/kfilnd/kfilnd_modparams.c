@@ -165,6 +165,11 @@ int kfilnd_tunables_setup(struct lnet_ni *ni)
 	if (kfilnd_tunables->lnd_auth_key == 0)
 		kfilnd_tunables->lnd_auth_key = auth_key;
 
+	if (strlen(kfilnd_tunables->lnd_traffic_class_str) == 0 &&
+	    strlen(traffic_class) < LNET_MAX_STR_LEN - 1)
+		strcpy(&kfilnd_tunables->lnd_traffic_class_str[0],
+		       traffic_class);
+
 	kfilnd_tunables->lnd_traffic_class =
 		kfilnd_tcstr2num(kfilnd_tunables->lnd_traffic_class_str);
 
