@@ -1140,13 +1140,21 @@ static int kfilnd_tn_state_wait_send_comp(struct kfilnd_transaction *tn,
 	KFILND_TN_DEBUG(tn, "%s event status %d", tn_event_to_str(event),
 			status);
 
-	if (event == TN_EVENT_TX_OK) {
+	switch (event) {
+	case TN_EVENT_TX_OK:
 		kfilnd_peer_alive(tn->tn_kp);
-		kfilnd_tn_finalize(tn, tn_released);
-	} else {
+		break;
+	case TN_EVENT_TX_FAIL:
+		kfilnd_tn_status_update(tn, status,
+					LNET_MSG_STATUS_NETWORK_TIMEOUT);
+		kfilnd_peer_tn_failed(tn->tn_kp, status);
+		break;
+	default:
 		KFILND_TN_ERROR(tn, "Invalid %s event", tn_event_to_str(event));
 		LBUG();
 	}
+
+	kfilnd_tn_finalize(tn, tn_released);
 
 	return 0;
 }
