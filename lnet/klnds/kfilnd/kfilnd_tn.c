@@ -1057,6 +1057,11 @@ static int kfilnd_tn_state_wait_comp(struct kfilnd_transaction *tn,
 
 	switch (event) {
 	case TN_EVENT_TX_OK:
+		if (unlikely(tn->msg_type == KFILND_MSG_BULK_PUT_REQ) &&
+		    CFS_FAIL_CHECK_RESET(CFS_KFI_FAIL_WAIT_SEND_COMP1,
+					 CFS_KFI_FAIL_WAIT_SEND_COMP2 |
+					 CFS_FAIL_ONCE))
+			break;
 		kfilnd_peer_alive(tn->tn_kp);
 		kfilnd_tn_timeout_enable(tn);
 		kfilnd_tn_state_change(tn, TN_STATE_WAIT_TAG_COMP);
@@ -1064,6 +1069,16 @@ static int kfilnd_tn_state_wait_comp(struct kfilnd_transaction *tn,
 
 	case TN_EVENT_TAG_RX_OK:
 		kfilnd_tn_state_change(tn, TN_STATE_WAIT_SEND_COMP);
+		if (unlikely(tn->msg_type == KFILND_MSG_BULK_PUT_REQ) &&
+		    CFS_FAIL_CHECK(CFS_KFI_FAIL_WAIT_SEND_COMP2)) {
+			struct kfi_cq_err_entry fake_error = {
+				.op_context = tn,
+				.flags = KFI_MSG | KFI_SEND,
+				.err = EIO,
+			};
+
+			kfilnd_ep_gen_fake_err(tn->tn_ep, &fake_error);
+		}
 		break;
 
 	case TN_EVENT_TX_FAIL:
