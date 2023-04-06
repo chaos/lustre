@@ -832,6 +832,7 @@ __must_hold(&conn->ibc_lock)
 	int ver = conn->ibc_version;
 	int rc;
 	int done;
+	int invalidate_succeeded = 0;
 
 	LASSERT(tx->tx_queued);
 	/* We rely on this for QP sizing */
@@ -939,12 +940,14 @@ __must_hold(&conn->ibc_lock)
 #else
 			rc = ib_post_send(conn->ibc_cmid->qp, wr, &bad);
 #endif
+		invalidate_succeeded = bad != &frd->frd_inv_wr.wr;
+
 		if (frd && !frd->frd_posted) {
 			/* The local invalidate becomes invalid (has been
 			 * successfully used) if the post succeeds or the
 			 * failing wr was not the invalidate. */
 			frd->frd_valid =
-				!(rc == 0 || (bad != &frd->frd_inv_wr.wr));
+				!(rc == 0 || invalidate_succeeded);
 		}
 	}
 
@@ -975,11 +978,13 @@ __must_hold(&conn->ibc_lock)
 	spin_unlock(&conn->ibc_lock);
 
         if (conn->ibc_state == IBLND_CONN_ESTABLISHED)
-                CERROR("Error %d posting transmit to %s\n",
-                       rc, libcfs_nid2str(peer_ni->ibp_nid));
+                CERROR("Error %d posting transmit to %s%s\n",
+		       rc, libcfs_nid2str(peer_ni->ibp_nid),
+		       invalidate_succeeded ? "" : " ,invalidate failed");
         else
-                CDEBUG(D_NET, "Error %d posting transmit to %s\n",
-                       rc, libcfs_nid2str(peer_ni->ibp_nid));
+                CDEBUG(D_NET, "Error %d posting transmit to %s%s\n",
+		       rc, libcfs_nid2str(peer_ni->ibp_nid),
+		       invalidate_succeeded ? "" : " ,invalidate failed");
 
         kiblnd_close_conn(conn, rc);
 
