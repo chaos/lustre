@@ -1331,6 +1331,20 @@ static int kfilnd_tn_state_fail(struct kfilnd_transaction *tn,
 		kfilnd_peer_alive(tn->tn_kp);
 		break;
 
+	case TN_EVENT_TAG_RX_OK:
+		kfilnd_peer_alive(tn->tn_kp);
+		if (tn->tn_status != status) {
+			KFILND_TN_DEBUG(tn, "%d -> %d status change",
+					tn->tn_status, status);
+			tn->tn_status = status;
+		}
+		if (tn->hstatus != LNET_MSG_STATUS_OK) {
+			KFILND_TN_DEBUG(tn, "%d -> %d health status change",
+					tn->hstatus, LNET_MSG_STATUS_OK);
+			tn->hstatus = LNET_MSG_STATUS_OK;
+		}
+		break;
+
 	case TN_EVENT_TAG_RX_FAIL:
 	case TN_EVENT_TAG_RX_CANCEL:
 		break;
