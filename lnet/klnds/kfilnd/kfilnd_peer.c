@@ -62,13 +62,10 @@ static void kfilnd_peer_free(void *ptr, void *arg)
 static void kfilnd_peer_del(struct kfilnd_peer *kp)
 {
 	if (atomic_cmpxchg(&kp->kp_remove_peer, 0, 1) == 0) {
-		struct lnet_nid peer_nid;
-
-		lnet_nid4_to_nid(kp->kp_nid, &peer_nid);
 		CDEBUG(D_NET, "%s(%p):0x%llx marked for removal from peer cache\n",
-		       libcfs_nidstr(&peer_nid), kp, kp->kp_addr);
+		       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr);
 
-		lnet_notify(kp->kp_dev->kfd_ni, &peer_nid, false, false,
+		lnet_notify(kp->kp_dev->kfd_ni, kp->kp_nid, false, false,
 			    kp->kp_last_alive);
 	}
 }
