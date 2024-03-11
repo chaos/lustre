@@ -619,6 +619,7 @@ long osc_lru_shrink(const struct lu_env *env, struct client_obd *cli,
 				cl_io_fini(env, io);
 				cl_object_put(env, clobj);
 				clobj = NULL;
+				cond_resched();
 			}
 
 			clobj = tmp;
@@ -674,6 +675,7 @@ long osc_lru_shrink(const struct lu_env *env, struct client_obd *cli,
 
 		cl_io_fini(env, io);
 		cl_object_put(env, clobj);
+		cond_resched();
 	}
 
 	atomic_dec(&cli->cl_lru_shrinkers);
