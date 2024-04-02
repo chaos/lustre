@@ -47,7 +47,7 @@ static void kfilnd_peer_free(void *ptr, void *arg)
 {
 	struct kfilnd_peer *kp = ptr;
 
-	CDEBUG(D_NET, "%s(%p):0x%llx peer entry freed\n",
+	CDEBUG(D_SNAPSHOT, "%s(%p):0x%llx peer entry freed\n",
 	       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr);
 
 	kfi_av_remove(kp->kp_dev->kfd_av, &kp->kp_addr, 1, 0);
@@ -62,7 +62,7 @@ static void kfilnd_peer_free(void *ptr, void *arg)
 static void kfilnd_peer_del(struct kfilnd_peer *kp)
 {
 	if (atomic_cmpxchg(&kp->kp_remove_peer, 0, 1) == 0) {
-		CDEBUG(D_NET, "%s(%p):0x%llx marked for removal from peer cache\n",
+		CDEBUG(D_SNAPSHOT, "%s(%p):0x%llx marked for removal from peer cache\n",
 		       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr);
 
 		lnet_notify(kp->kp_dev->kfd_ni, kp->kp_nid, false, false,
@@ -79,7 +79,7 @@ static void kfilnd_peer_purge_old_peer(struct kfilnd_peer *kp)
 {
 	if (ktime_after(ktime_get_seconds(),
 			kp->kp_last_alive + (lnet_get_lnd_timeout() * 5))) {
-		CDEBUG(D_NET,
+		CDEBUG(D_SNAPSHOT,
 		       "Haven't heard from %s(%p):0x%llx in %lld seconds\n",
 		       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr,
 		       ktime_sub(ktime_get_seconds(), kp->kp_last_alive));
@@ -98,7 +98,7 @@ static void kfilnd_peer_stale(struct kfilnd_peer *kp)
 	if (atomic_cmpxchg(&kp->kp_state,
 			   KP_STATE_UPTODATE,
 			   KP_STATE_STALE) == KP_STATE_UPTODATE) {
-		CDEBUG(D_NET, "%s(%p):0x%llx uptodate -> stale\n",
+		CDEBUG(D_SNAPSHOT, "%s(%p):0x%llx uptodate -> stale\n",
 		       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr);
 	} else {
 		kfilnd_peer_purge_old_peer(kp);
@@ -118,12 +118,12 @@ static void kfilnd_peer_down(struct kfilnd_peer *kp)
 	} else if (atomic_cmpxchg(&kp->kp_state,
 				  KP_STATE_UPTODATE,
 				  KP_STATE_DOWN) == KP_STATE_UPTODATE) {
-		CDEBUG(D_NET, "%s(%p):0x%llx uptodate -> down\n",
+		CDEBUG(D_SNAPSHOT, "%s(%p):0x%llx uptodate -> down\n",
 		       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr);
 	} else if (atomic_cmpxchg(&kp->kp_state,
 				  KP_STATE_STALE,
 				  KP_STATE_DOWN) == KP_STATE_STALE) {
-		CDEBUG(D_NET, "%s(%p):0x%llx stale -> down\n",
+		CDEBUG(D_SNAPSHOT, "%s(%p):0x%llx stale -> down\n",
 		       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr);
 	}
 }
@@ -163,7 +163,7 @@ void kfilnd_peer_put(struct kfilnd_peer *kp)
 				       peer_cache_params);
 		refcount_dec(&kp->kp_cnt);
 
-		CDEBUG(D_NET, "%s(%p):0x%llx removed from peer cache\n",
+		CDEBUG(D_SNAPSHOT, "%s(%p):0x%llx removed from peer cache\n",
 		       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr);
 	}
 
@@ -277,7 +277,7 @@ again:
 
 	kfilnd_peer_alive(kp);
 
-	CDEBUG(D_NET, "%s(%p):0x%llx peer entry allocated\n",
+	CDEBUG(D_SNAPSHOT, "%s(%p):0x%llx peer entry allocated\n",
 	       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr);
 
 	return kp;
@@ -356,20 +356,20 @@ void kfilnd_peer_process_hello(struct kfilnd_peer *kp, struct kfilnd_msg *msg)
 	if (msg->type == KFILND_MSG_HELLO_REQ) {
 		kp->kp_version = min_t(__u16, KFILND_MSG_VERSION,
 				       msg->proto.hello.version);
-		CDEBUG(D_NET,
+		CDEBUG(D_SNAPSHOT,
 		       "Peer %s(%p):0x%llx version: %u; local version %u; negotiated version: %u\n",
 		       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr,
 		       msg->proto.hello.version, KFILND_MSG_VERSION,
 		       kp->kp_version);
 	} else {
 		kp->kp_version = msg->proto.hello.version;
-		CDEBUG(D_NET,"Peer %s(%p):0x%llx negotiated version: %u\n",
+		CDEBUG(D_SNAPSHOT,"Peer %s(%p):0x%llx negotiated version: %u\n",
 		       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr,
 		       msg->proto.hello.version);
 	}
 
 	atomic_set(&kp->kp_state, KP_STATE_UPTODATE);
-	CDEBUG(D_NET, "kp %s(%p):0x%llx is up-to-date\n",
+	CDEBUG(D_SNAPSHOT, "kp %s(%p):0x%llx is up-to-date\n",
 	       libcfs_nid2str(kp->kp_nid), kp, kp->kp_addr);
 
 	/* Clear kp_hello_pending if we've received the hello response,

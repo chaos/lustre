@@ -255,8 +255,8 @@ int ptlrpc_start_bulk_transfer(struct ptlrpc_bulk_desc *desc)
 		RETURN(0);
 	}
 
-	CDEBUG(D_NET, "Transferring %u pages %u bytes via portal %d "
-	       "id %s mbits %#llx-%#llx\n", desc->bd_iov_count,
+	CDEBUG(D_SNAPSHOT, "Transferring %u pages %u bytes via portal %d "
+	       "id %s mbits %llu-%llu\n", desc->bd_iov_count,
 	       desc->bd_nob, desc->bd_portal, libcfs_id2str(peer_id),
 	       mbits - posted_md, mbits - 1);
 
@@ -420,8 +420,8 @@ int ptlrpc_register_bulk(struct ptlrpc_request *req)
 		      total_md - desc->bd_refs);
 	spin_unlock(&desc->bd_lock);
 
-	CDEBUG(D_NET,
-	       "Setup %u bulk %s buffers: %u pages %u bytes, mbits x%#llx-%#llx, portal %u\n",
+	CDEBUG(D_SNAPSHOT,
+	       "Setup %u bulk %s buffers: %u pages %u bytes, mbits %llu-%llu, portal %u\n",
 	       desc->bd_refs,
 	       ptlrpc_is_bulk_op_get(desc->bd_type) ? "get-source" : "put-sink",
 	       desc->bd_iov_count, desc->bd_nob,

@@ -399,6 +399,9 @@ LNetMDAttach(struct lnet_me *me, const struct lnet_md *umd,
 	lnet_drop_delayed_msg_list(&drops, "Bad match");
 	lnet_recv_delayed_msg_list(&matches);
 
+	CDEBUG(D_SNAPSHOT, "md %p me %p mbits %llu\n",
+	       md, me, me->me_match_bits);
+
 	return 0;
 }
 EXPORT_SYMBOL(LNetMDAttach);
@@ -449,6 +452,7 @@ LNetMDBind(const struct lnet_md *umd, enum lnet_unlink unlink,
 	lnet_md2handle(handle, md);
 
 	lnet_res_unlock(cpt);
+
 	return 0;
 
  out_free:

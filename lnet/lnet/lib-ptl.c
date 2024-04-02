@@ -193,7 +193,7 @@ lnet_try_match_md(struct lnet_libmd *md,
 
 	/* Commit to this ME/MD */
 	CDEBUG(D_NET, "Incoming %s index %x from %s of "
-	       "length %d/%d into md %#llx [%d] + %d\n",
+	       "length %d/%d into md %llu [%d] + %d\n",
 	       (info->mi_opc == LNET_MD_OP_PUT) ? "put" : "get",
 	       info->mi_portal, libcfs_idstr(&info->mi_id), mlength,
 	       info->mi_rlength, md->md_lh.lh_cookie, md->md_niov, offset);
@@ -567,8 +567,8 @@ lnet_ptl_match_md(struct lnet_match_info *info, struct lnet_msg *msg)
 	struct lnet_portal	*ptl;
 	int			rc;
 
-	CDEBUG(D_NET,
-	       "Request from %s of length %d into portal %d MB=%#llx\n",
+	CDEBUG(D_SNAPSHOT,
+	       "Request from %s of length %d into portal %d MB=%llu\n",
 	       libcfs_idstr(&info->mi_id),
 	       info->mi_rlength, info->mi_portal, info->mi_mbits);
 
@@ -624,8 +624,8 @@ lnet_ptl_match_md(struct lnet_match_info *info, struct lnet_msg *msg)
 
 	/* LNET_MATCHMD_NONE means msg was added to the delay queue */
 	if (rc & LNET_MATCHMD_NONE) {
-		CDEBUG(D_NET,
-		       "Delaying %s from %s ptl %d MB %#llx off %d len %d\n",
+		CDEBUG(D_SNAPSHOT,
+		       "Delaying %s from %s ptl %d MB %llu off %d len %d\n",
 		       info->mi_opc == LNET_MD_OP_PUT ? "PUT" : "GET",
 		       libcfs_idstr(&info->mi_id), info->mi_portal,
 		       info->mi_mbits, info->mi_roffset, info->mi_rlength);
