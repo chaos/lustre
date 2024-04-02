@@ -1939,7 +1939,7 @@ no_bulk:
 
 	*reqp = req;
 	niobuf = req_capsule_client_get(pill, &RMF_NIOBUF_REMOTE);
-	CDEBUG(D_RPCTRACE, "brw rpc %p - object "DOSTID" offset %lld<>%lld\n",
+	CDEBUG(D_SNAPSHOT, "brw rpc %p - object "DOSTID" offset %lld<>%lld\n",
 		req, POSTID(&oa->o_oi), niobuf[0].rnb_offset,
 		niobuf[niocount - 1].rnb_offset + niobuf[niocount - 1].rnb_len);
         RETURN(0);
@@ -2081,7 +2081,7 @@ check_write_checksum(struct obdo *oa, const struct lnet_processid *peer,
                 msg = "changed in transit AND doesn't match the original - "
                       "likely false positive due to mmap IO (bug 11742)";
 
-	LCONSOLE_ERROR_MSG(0x132, "%s: BAD WRITE CHECKSUM: %s: from %s inode "
+	CERROR("%s: BAD WRITE CHECKSUM: %s: from %s inode "
 			   DFID " object "DOSTID" extent [%llu-%llu], original "
 			   "client csum %x (type %x), server csum %x (type %x),"
 			   " client csum now %x\n",

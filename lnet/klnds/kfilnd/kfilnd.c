@@ -334,9 +334,9 @@ static int kfilnd_recv(struct lnet_ni *ni, void *private, struct lnet_msg *msg,
 						 ni);
 #endif
 
-	KFILND_TN_DEBUG(tn, "%s in %u bytes in %u frags",
+	KFILND_TN_DEBUG2(tn, "%s in %u bytes in %u frags trmk %u trr %u",
 			msg_type_to_str(rxmsg->type), tn->tn_nob,
-			tn->tn_num_iovec);
+			tn->tn_num_iovec, tn->tn_response_mr_key, tn->tn_response_rx);
 
 	kfilnd_tn_event_handler(tn, event, status);
 

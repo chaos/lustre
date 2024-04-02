@@ -208,9 +208,8 @@ void client_bulk_callback(struct lnet_event *ev)
 	if (CFS_FAIL_CHECK_ORSET(OBD_FAIL_PTLRPC_CLIENT_BULK_CB2,CFS_FAIL_ONCE))
 		ev->status = -EIO;
 
-	CDEBUG_LIMIT((ev->status == 0) ? D_NET : D_ERROR,
-		     "event type %d, status %d, desc %p\n",
-		     ev->type, ev->status, desc);
+	CDEBUG(D_SNAPSHOT, "event type %d, status %d, desc %p\n",
+	       ev->type, ev->status, desc);
 
 	spin_lock(&desc->bd_lock);
 	req = desc->bd_req;
@@ -471,9 +470,8 @@ void server_bulk_callback(struct lnet_event *ev)
 		(ptlrpc_is_bulk_get_sink(desc->bd_type) &&
 		 ev->type == LNET_EVENT_REPLY));
 
-	CDEBUG_LIMIT((ev->status == 0) ? D_NET : D_ERROR,
-		     "event type %d, status %d, desc %p\n",
-		     ev->type, ev->status, desc);
+	CDEBUG(D_SNAPSHOT, "event type %d, status %d, desc %p\n",
+	       ev->type, ev->status, desc);
 
 	spin_lock(&desc->bd_lock);
 

@@ -345,6 +345,9 @@ lnet_msg_attach_md(struct lnet_msg *msg, struct lnet_libmd *md,
 	 * signals completion. */
 	LASSERT(!msg->msg_routing);
 
+	CDEBUG(D_SNAPSHOT, "msg %p md %p handle %llu bulk_handle %llu\n",
+	       msg, md, md->md_lh.lh_cookie, md->md_bulk_handle.cookie);
+
 	msg->msg_md = md;
 	if (msg->msg_receiving) { /* committed for receiving */
 		msg->msg_offset = offset;
@@ -997,11 +1000,13 @@ lnet_msg_detach_md(struct lnet_msg *msg, int status)
 	md->md_refcount--;
 	LASSERT(md->md_refcount >= 0);
 
+	CDEBUG(D_SNAPSHOT, "md %p msg %p\n", md, msg);
+
 	unlink = lnet_md_unlinkable(md);
 	if (md->md_handler) {
 		if ((md->md_flags & LNET_MD_FLAG_ABORTED) && !status) {
 			msg->msg_ev.status   = -ETIMEDOUT;
-			CDEBUG(D_NET, "md 0x%p already unlinked\n", md);
+			CDEBUG(D_SNAPSHOT, "md %p already unlinked\n", md);
 		} else {
 			msg->msg_ev.status   = status;
 		}
