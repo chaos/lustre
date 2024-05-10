@@ -294,7 +294,7 @@ static void kfilnd_tn_record_state_change(struct kfilnd_transaction *tn)
 static void kfilnd_tn_state_change(struct kfilnd_transaction *tn,
 				   enum tn_states new_state)
 {
-	KFILND_TN_DEBUG2(tn, "%s -> %s state change",
+	KFILND_TN_DEBUG(tn, "%s -> %s state change",
 			tn_state_to_str(tn->tn_state),
 			tn_state_to_str(new_state));
 
@@ -309,13 +309,13 @@ static void kfilnd_tn_status_update(struct kfilnd_transaction *tn, int status,
 {
 	/* Only the first non-ok status will take. */
 	if (tn->tn_status == 0) {
-		KFILND_TN_DEBUG2(tn, "%d -> %d status change", tn->tn_status,
+		KFILND_TN_DEBUG(tn, "%d -> %d status change", tn->tn_status,
 				status);
 		tn->tn_status = status;
 	}
 
 	if (tn->hstatus == LNET_MSG_STATUS_OK) {
-		KFILND_TN_DEBUG2(tn, "%d -> %d health status change",
+		KFILND_TN_DEBUG(tn, "%d -> %d health status change",
 				tn->hstatus, hstatus);
 		tn->hstatus = hstatus;
 	}
@@ -581,13 +581,13 @@ static int kfilnd_tn_state_tagged_recv_posted(struct kfilnd_transaction *tn,
 {
 	int rc;
 
-	KFILND_TN_DEBUG2(tn, "%s event status %d tmk %u trr %u", tn_event_to_str(event),
-			status, tn->tn_mr_key, tn->tn_response_rx);
+	KFILND_TN_DEBUG(tn, "%s event status %d", tn_event_to_str(event),
+			status);
 
 	switch (event) {
 	case TN_EVENT_INIT_BULK:
 		tn->tn_target_addr = kfilnd_peer_get_kfi_addr(tn->tn_kp);
-		KFILND_TN_DEBUG2(tn, "Using peer %s(%#llx)",
+		KFILND_TN_DEBUG(tn, "Using peer %s(%#llx)",
 				libcfs_nid2str(tn->tn_kp->kp_nid),
 				tn->tn_target_addr);
 
@@ -1083,7 +1083,7 @@ static int kfilnd_tn_state_wait_comp(struct kfilnd_transaction *tn,
 	int rc;
 	enum lnet_msg_hstatus hstatus;
 
-	KFILND_TN_DEBUG2(tn, "%s event status %d", tn_event_to_str(event),
+	KFILND_TN_DEBUG(tn, "%s event status %d", tn_event_to_str(event),
 			status);
 
 	switch (event) {
@@ -1193,7 +1193,7 @@ static int kfilnd_tn_state_wait_send_comp(struct kfilnd_transaction *tn,
 					  enum tn_events event, int status,
 					  bool *tn_released)
 {
-	KFILND_TN_DEBUG2(tn, "%s event status %d", tn_event_to_str(event),
+	KFILND_TN_DEBUG(tn, "%s event status %d", tn_event_to_str(event),
 			status);
 
 	switch (event) {
@@ -1224,8 +1224,8 @@ static int kfilnd_tn_state_wait_tag_rma_comp(struct kfilnd_transaction *tn,
 {
 	enum lnet_msg_hstatus hstatus;
 
-	KFILND_TN_DEBUG2(tn, "%s event status %d key 0x%x peer 0x%llx", tn_event_to_str(event),
-			status, tn->tn_response_mr_key, tn->tn_target_addr);
+	KFILND_TN_DEBUG(tn, "%s event status %d", tn_event_to_str(event),
+			status);
 
 	switch (event) {
 	case TN_EVENT_TAG_TX_OK:
@@ -1263,7 +1263,7 @@ static int kfilnd_tn_state_wait_tag_comp(struct kfilnd_transaction *tn,
 	int rc;
 	enum lnet_msg_hstatus hstatus;
 
-	KFILND_TN_DEBUG2(tn, "%s event status %d", tn_event_to_str(event),
+	KFILND_TN_DEBUG(tn, "%s event status %d", tn_event_to_str(event),
 			status);
 
 	switch (event) {
@@ -1511,7 +1511,7 @@ void kfilnd_tn_free(struct kfilnd_transaction *tn)
 	list_del(&tn->tn_entry);
 	spin_unlock(&tn->tn_ep->tn_list_lock);
 
-	KFILND_TN_DEBUG2(tn, "Transaction freed");
+	KFILND_TN_DEBUG(tn, "Transaction freed");
 
 	if (tn->tn_mr_key)
 		kfilnd_ep_put_key(tn->tn_ep, tn->tn_mr_key);

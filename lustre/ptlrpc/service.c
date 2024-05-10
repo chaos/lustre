@@ -2296,7 +2296,7 @@ static int ptlrpc_server_handle_request(struct ptlrpc_service_part *svcpt,
 		goto put_conn;
 	}
 
-	CDEBUG(D_SNAPSHOT,
+	CDEBUG(D_RPCTRACE,
 	       "Handling RPC req@%p pname:cluuid+ref:pid:xid:nid:opc:job %s:%s+%d:%d:x%llu:%s:%d:%s\n",
 	       request, current->comm,
 	       (request->rq_export ?
