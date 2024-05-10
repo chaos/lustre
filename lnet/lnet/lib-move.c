@@ -881,12 +881,13 @@ lnet_post_send_locked(struct lnet_msg *msg, int do_send)
 	    (msg->msg_md->md_flags & LNET_MD_FLAG_ABORTED) != 0) {
 		lnet_net_unlock(cpt);
 
-		CNETERR("Aborting message %p for %s: LNetMDUnlink() already called on the MD %p\n",
-			msg, libcfs_idstr(&msg->msg_target), msg->msg_md);
+		CNETERR("Aborting message for %s: LNetM[DE]Unlink() already "
+			"called on the MD/ME.\n",
+			libcfs_idstr(&msg->msg_target));
 		if (do_send) {
 			msg->msg_no_resend = true;
-			CDEBUG(D_SNAPSHOT, "msg %p to %s md %p canceled and will not be resent\n",
-			       msg, libcfs_idstr(&msg->msg_target), msg->msg_md);
+			CDEBUG(D_NET, "msg %p to %s canceled and will not be resent\n",
+			       msg, libcfs_idstr(&msg->msg_target));
 			lnet_finalize(msg, -ECANCELED);
 		}
 
@@ -943,13 +944,6 @@ lnet_post_send_locked(struct lnet_msg *msg, int do_send)
 	msg->msg_tx_delayed = 0;
 
 	if (do_send) {
-	       CDEBUG(D_SNAPSHOT, "TRACE: msg %p %s(%s) -> %s(%s) %s try# %d\n",
-		      msg,
-		      libcfs_nidstr(&msg->msg_hdr.src_nid),
-		      libcfs_nidstr(&msg->msg_txni->ni_nid),
-		      libcfs_nidstr(&msg->msg_hdr.dest_nid),
-		      libcfs_nidstr(&msg->msg_txpeer->lpni_nid),
-		      lnet_msgtyp2str(msg->msg_type), msg->msg_retry_count);
 		lnet_net_unlock(cpt);
 		lnet_ni_send(ni, msg);
 		lnet_net_lock(cpt);
@@ -1970,8 +1964,7 @@ lnet_handle_send(struct lnet_send_data *sd)
 	rc = lnet_post_send_locked(msg, 0);
 
 	if (!rc)
-		CDEBUG(D_SNAPSHOT, "TRACE: %p %s(%s:%s) -> %s(%s:%s) %s : %s try# %d\n",
-		       msg,
+		CDEBUG(D_NET, "TRACE: %s(%s:%s) -> %s(%s:%s) %s : %s try# %d\n",
 		       libcfs_nidstr(&msg->msg_hdr.src_nid),
 		       libcfs_nidstr(&msg->msg_txni->ni_nid),
 		       libcfs_nidstr(&sd->sd_src_nid),
@@ -4183,8 +4176,6 @@ lnet_drop_message(struct lnet_ni *ni, int cpt, void *private, unsigned int nob,
 	the_lnet.ln_counters[cpt]->lct_common.lcc_drop_length += nob;
 	lnet_net_unlock(cpt);
 
-	CDEBUG(D_SNAPSHOT, "Dropping message\n");
-
 	lnet_ni_recv(ni, private, NULL, 0, 0, 0, nob);
 }
 
@@ -4257,7 +4248,7 @@ lnet_parse_put(struct lnet_ni *ni, struct lnet_msg *msg)
 		fallthrough;
 
 	case LNET_MATCHMD_DROP:
-		CERROR("Dropping PUT from %s portal %d match %llu"
+		CNETERR("Dropping PUT from %s portal %d match %llu"
 			" offset %d length %d: %d\n",
 			libcfs_idstr(&info.mi_id), info.mi_portal,
 			info.mi_mbits, info.mi_roffset, info.mi_rlength, rc);
@@ -4295,7 +4286,7 @@ lnet_parse_get(struct lnet_ni *ni, struct lnet_msg *msg, int rdma_get)
 
 	rc = lnet_ptl_match_md(&info, msg);
 	if (rc == LNET_MATCHMD_DROP) {
-		CERROR("Dropping GET from %s portal %d match %llu"
+		CNETERR("Dropping GET from %s portal %d match %llu"
 			" offset %d length %d\n",
 			libcfs_idstr(&info.mi_id), info.mi_portal,
 			info.mi_mbits, info.mi_roffset, info.mi_rlength);
@@ -4356,7 +4347,7 @@ lnet_parse_reply(struct lnet_ni *ni, struct lnet_msg *msg)
 	/* NB handles only looked up by creator (no flips) */
 	md = lnet_wire_handle2md(&hdr->msg.reply.dst_wmd);
 	if (md == NULL || md->md_threshold == 0 || md->md_me != NULL) {
-		CERROR("%s: Dropping REPLY from %s for %s "
+		CNETERR("%s: Dropping REPLY from %s for %s "
 			"MD %#llx.%#llx\n",
 			libcfs_nidstr(&ni->ni_nid), libcfs_idstr(&src),
 			(md == NULL) ? "invalid" : "inactive",
@@ -4377,7 +4368,7 @@ lnet_parse_reply(struct lnet_ni *ni, struct lnet_msg *msg)
 
 	if (mlength < rlength &&
 	    (md->md_options & LNET_MD_TRUNCATE) == 0) {
-		CERROR("%s: Dropping REPLY from %s length %d "
+		CNETERR("%s: Dropping REPLY from %s length %d "
 			"for MD %#llx would overflow (%d)\n",
 			libcfs_nidstr(&ni->ni_nid), libcfs_idstr(&src),
 			rlength, hdr->msg.reply.dst_wmd.wh_object_cookie,
@@ -4386,7 +4377,7 @@ lnet_parse_reply(struct lnet_ni *ni, struct lnet_msg *msg)
 		return -ENOENT;	/* -ve: OK but no match */
 	}
 
-	CDEBUG(D_SNAPSHOT, "%s: Reply from %s of length %d/%d into md %llu\n",
+	CDEBUG(D_NET, "%s: Reply from %s of length %d/%d into md %#llx\n",
 	       libcfs_nidstr(&ni->ni_nid), libcfs_idstr(&src),
 	       mlength, rlength, hdr->msg.reply.dst_wmd.wh_object_cookie);
 
@@ -4557,6 +4548,13 @@ lnet_parse(struct lnet_ni *ni, struct lnet_hdr *hdr,
 	for_me = nid_same(&ni->ni_nid, &dest_nid);
 	cpt = lnet_nid2cpt(from_nid, ni);
 
+	CDEBUG(D_NET, "TRACE: %s(%s) <- %s : %s - %s\n",
+		libcfs_nidstr(&dest_nid),
+		libcfs_nidstr(&ni->ni_nid),
+		libcfs_nidstr(&src_nid),
+		lnet_msgtyp2str(type),
+		(for_me) ? "for me" : "routed");
+
 	switch (type) {
 	case LNET_MSG_ACK:
 	case LNET_MSG_GET:
@@ -4684,15 +4682,6 @@ lnet_parse(struct lnet_ni *ni, struct lnet_hdr *hdr,
 		       lnet_msgtyp2str(type));
 		goto drop;
 	}
-
-	CDEBUG(D_SNAPSHOT, "TRACE: %p %s(%s) <- %s : %s%s - %s\n",
-		msg,
-		libcfs_nidstr(&dest_nid),
-		libcfs_nidstr(&ni->ni_nid),
-		libcfs_nidstr(&src_nid),
-		rdma_req ? " RDMA " : "",
-		lnet_msgtyp2str(type),
-		(for_me) ? "for me" : "routed");
 
 	/* msg zeroed in lnet_msg_alloc; i.e. flags all clear,
 	 * pointers NULL etc */
@@ -5165,8 +5154,8 @@ lnet_create_reply_msg(struct lnet_ni *ni, struct lnet_msg *getmsg)
 
 	LASSERT(getmd->md_offset == 0);
 
-	CDEBUG(D_SNAPSHOT, "%s: getmsg %p reply from %s msg %p md %p\n",
-	       libcfs_nidstr(&ni->ni_nid), getmsg, libcfs_idstr(peer_id), msg, getmd);
+	CDEBUG(D_NET, "%s: Reply from %s md %p\n",
+	       libcfs_nidstr(&ni->ni_nid), libcfs_idstr(peer_id), getmd);
 
 	/* setup information for lnet_build_msg_event */
 	msg->msg_initiator =

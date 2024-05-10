@@ -130,8 +130,6 @@ static void kfilnd_cq_process_event(struct kfi_cq_data_entry *event)
 	case KFI_TAGGED | KFI_RMA | KFI_WRITE | KFI_RECV:
 		tn_event = TN_EVENT_TAG_RX_OK;
 		tn = event->op_context;
-		CDEBUG(D_SNAPSHOT, "event %p flags %llu data %llu\n", event,
-		       event->flags, event->data);
 		break;
 
 	case KFI_TAGGED | KFI_SEND:

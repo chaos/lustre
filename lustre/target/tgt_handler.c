@@ -2588,10 +2588,10 @@ static void tgt_warn_on_cksum(struct ptlrpc_request *req,
 		return;
 	}
 
-	CERROR("req %p %s: BAD WRITE CHECKSUM: from %s%s%s inode "
+	LCONSOLE_ERROR_MSG(0x168, "%s: BAD WRITE CHECKSUM: from %s%s%s inode "
 			   DFID" object "DOSTID" extent [%llu-%llu"
 			   "]: client csum %x, server csum %x\n",
-			   req, exp->exp_obd->obd_name, libcfs_id2str(req->rq_peer),
+			   exp->exp_obd->obd_name, libcfs_id2str(req->rq_peer),
 			   via, router,
 			   body->oa.o_valid & OBD_MD_FLFID ?
 			   body->oa.o_parent_seq : (__u64)0,
