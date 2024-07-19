@@ -452,6 +452,38 @@ static ssize_t max_read_ahead_whole_mb_store(struct kobject *kobj,
 }
 LUSTRE_RW_ATTR(max_read_ahead_whole_mb);
 
+static ssize_t max_reclaim_count_show(struct kobject *kobj,
+				      struct attribute *attr, char *buf)
+{
+	struct ll_sb_info *sbi = container_of(kobj, struct ll_sb_info,
+					      ll_kset.kobj);
+
+	return scnprintf(buf, PAGE_SIZE, "%u\n",
+			 sbi->ll_cache->ccc_lru_shrinkers_max);
+}
+
+static ssize_t max_reclaim_count_store(struct kobject *kobj,
+				       struct attribute *attr,
+				       const char *buffer, size_t count)
+{
+	struct ll_sb_info *sbi = container_of(kobj, struct ll_sb_info,
+					      ll_kset.kobj);
+	unsigned int val;
+	int rc;
+
+	rc = kstrtouint(buffer, 10, &val);
+	if (rc)
+		return rc;
+
+	if (val == 0 || val > num_online_cpus())
+		return -ERANGE;
+
+	sbi->ll_cache->ccc_lru_shrinkers_max = val;
+
+	return count;
+}
+LUSTRE_RW_ATTR(max_reclaim_count);
+
 static int ll_max_cached_mb_seq_show(struct seq_file *m, void *v)
 {
 	struct super_block     *sb    = m->private;
@@ -471,13 +503,15 @@ static int ll_max_cached_mb_seq_show(struct seq_file *m, void *v)
 		      "used_mb: %ld\n"
 		      "unused_mb: %ld\n"
 		      "reclaim_count: %u\n"
+		      "max_reclaim_count: %u\n"
 		      "max_read_ahead_mb: %lu\n"
 		      "used_read_ahead_mb: %d\n",
 		   atomic_read(&cache->ccc_users),
 		   max_cached_mb,
 		   max_cached_mb - unused_mb,
 		   unused_mb,
-		   cache->ccc_lru_shrinkers,
+		   atomic_read(&cache->ccc_lru_shrinkers),
+		   cache->ccc_lru_shrinkers_max,
 		   PAGES_TO_MiB(ra->ra_max_pages),
 		   PAGES_TO_MiB(atomic_read(&ra->ra_cur_pages)));
 	return 0;
@@ -1800,6 +1834,7 @@ static struct attribute *llite_attrs[] = {
 	&lustre_attr_max_read_ahead_mb.attr,
 	&lustre_attr_max_read_ahead_per_file_mb.attr,
 	&lustre_attr_max_read_ahead_whole_mb.attr,
+	&lustre_attr_max_reclaim_count.attr,
 	&lustre_attr_max_read_ahead_async_active.attr,
 	&lustre_attr_read_ahead_async_file_threshold_mb.attr,
 	&lustre_attr_read_ahead_range_kb.attr,
