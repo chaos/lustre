@@ -546,10 +546,12 @@ long osc_lru_shrink(const struct lu_env *env, struct client_obd *cli,
 {
 	struct cl_io *io;
 	struct cl_object *clobj = NULL;
+	struct cl_client_cache *cache = cli->cl_cache;
 	struct cl_page **pvec;
 	struct osc_page *opg;
 	long count = 0;
 	int maxscan = 0;
+	int ms = cache->ccc_lru_shrinkers_max;
 	int index = 0;
 	int rc = 0;
 	ENTRY;
@@ -558,9 +560,11 @@ long osc_lru_shrink(const struct lu_env *env, struct client_obd *cli,
 	if (atomic_long_read(&cli->cl_lru_in_list) == 0 || target <= 0)
 		RETURN(0);
 
-	CDEBUG(D_CACHE, "%s: shrinkers: %d, force: %d\n",
-	       cli_name(cli), atomic_read(&cli->cl_lru_shrinkers), force);
+	CDEBUG(D_CACHE, "%s: cl_lru_shrinkers: %d, ccc_lru_shrinkers: %d, ms: %d, force: %d\n",
+	       cli_name(cli), atomic_read(&cli->cl_lru_shrinkers),
+	       atomic_read(&cache->ccc_lru_shrinkers), ms, force);
 	if (!force) {
+		/* limit to a single active shrinker per client_obd */
 		if (atomic_read(&cli->cl_lru_shrinkers) > 0)
 			RETURN(-EBUSY);
 
@@ -568,8 +572,27 @@ long osc_lru_shrink(const struct lu_env *env, struct client_obd *cli,
 			atomic_dec(&cli->cl_lru_shrinkers);
 			RETURN(-EBUSY);
 		}
+
+		/* limit to minimize contention on the page cache lock */
+		if (atomic_read(&cache->ccc_lru_shrinkers) >= ms) {
+			atomic_dec(&cli->cl_lru_shrinkers);
+			RETURN(-EBUSY);
+		}
+
+		if (atomic_inc_return(&cache->ccc_lru_shrinkers) > ms) {
+			atomic_dec(&cache->ccc_lru_shrinkers);
+			atomic_dec(&cli->cl_lru_shrinkers);
+			RETURN(-EBUSY);
+		}
 	} else {
 		atomic_inc(&cli->cl_lru_shrinkers);
+
+		/* forced shrink requests queue when over the limit */
+		while (atomic_inc_return(&cache->ccc_lru_shrinkers) > ms) {
+			atomic_dec(&cache->ccc_lru_shrinkers);
+			wait_event_idle(cache->ccc_lru_shrinkers_waitq,
+				atomic_read(&cache->ccc_lru_shrinkers) < ms);
+		}
 	}
 
 	pvec = (struct cl_page **)osc_env_info(env)->oti_pvec;
@@ -583,8 +606,10 @@ long osc_lru_shrink(const struct lu_env *env, struct client_obd *cli,
 		struct cl_page *page;
 		bool will_free = false;
 
-		if (!force && atomic_read(&cli->cl_lru_shrinkers) > 1)
+		if (!force && (atomic_read(&cli->cl_lru_shrinkers) > 1 ||
+		    atomic_read(&cache->ccc_lru_shrinkers) > ms)) {
 			break;
+		}
 
 		if (--maxscan < 0)
 			break;
@@ -654,6 +679,7 @@ long osc_lru_shrink(const struct lu_env *env, struct client_obd *cli,
 			discard_cl_pages(env, io, pvec, index);
 			index = 0;
 
+			cond_resched();
 			spin_lock(&cli->cl_lru_list_lock);
 		}
 
@@ -669,6 +695,9 @@ long osc_lru_shrink(const struct lu_env *env, struct client_obd *cli,
 		cl_object_put(env, clobj);
 		cond_resched();
 	}
+
+	atomic_dec(&cache->ccc_lru_shrinkers);
+	wake_up(&cli->cl_cache->ccc_lru_shrinkers_waitq);
 
 	atomic_dec(&cli->cl_lru_shrinkers);
 	if (count > 0) {
@@ -724,7 +753,6 @@ static long osc_lru_reclaim(struct client_obd *cli, unsigned long npages)
 	spin_lock(&cache->ccc_lru_lock);
 	LASSERT(!list_empty(&cache->ccc_lru));
 
-	cache->ccc_lru_shrinkers++;
 	list_move_tail(&cli->cl_lru_osc, &cache->ccc_lru);
 
 	max_scans = refcount_read(&cache->ccc_users) - 2;
