@@ -133,6 +133,11 @@ lnet_connect_console_error(int rc, struct lnet_nid *peer_nid,
 }
 EXPORT_SYMBOL(lnet_connect_console_error);
 
+/*
+ * https://lc.llnl.gov/jira/browse/TOSS-6350
+ */
+#define EDVRPFTPD 1022
+
 struct socket *
 lnet_connect(struct lnet_nid *peer_nid, int interface,
 	     struct sockaddr *peeraddr,
@@ -154,7 +159,14 @@ lnet_connect(struct lnet_nid *peer_nid, int interface,
 	for (port = LNET_ACCEPTOR_MAX_RESERVED_PORT;
 	     port >= LNET_ACCEPTOR_MIN_RESERVED_PORT;
 	     --port) {
+
 		/* Iterate through reserved ports. */
+
+		if (port == EDVRPFTPD) {
+			LCONSOLE_INFO("skipping EDVRPFTPD port %d\n", port);
+			continue;
+		}
+
 		sock = lnet_sock_connect(interface, port, peeraddr, ns);
 		if (IS_ERR(sock)) {
 			rc = PTR_ERR(sock);
