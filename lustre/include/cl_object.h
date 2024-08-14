@@ -2352,15 +2352,7 @@ struct cl_client_cache {
 	/**
 	 * # of threads are doing shrinking
 	 */
-	atomic_t		ccc_lru_shrinkers;
-	/**
-	 * Max # or threads are doing shrinking
-	 */
-	unsigned int		ccc_lru_shrinkers_max;
-	/**
-	 * Waitq for forced shrink requests over limit
-	 */
-	wait_queue_head_t	ccc_lru_shrinkers_waitq;
+	unsigned int		ccc_lru_shrinkers;
 	/**
 	 * # of LRU entries available
 	 */
